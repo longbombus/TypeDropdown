@@ -1,0 +1,16 @@
+{
+  "name": "com.longbombus.typedropdown",
+  "displayName": "Type Dropdown",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "description": "Use [TypeDropdown] attribute to select in Inspector a type for [SerializeReference] fields or [SerializeField] string fields",
+  "keywords": [
+    "SerializeReference",
+    "dropdown",
+    "uielements",
+    "uitoolkit"
+  ],
+  "license": "MIT",
+  "category": "Utilities",
+  "dependencies": {}
+}
