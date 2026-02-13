@@ -10,6 +10,19 @@ namespace TypeDropdown.Tests
 	{
 	}
 
+	[System.Serializable]
+	public class TestSerializableClass : BaseClass
+	{
+		[SerializeField] private int integer;
+	}
+
+	[System.Serializable]
+	public class TestSerializableWithReferencesClass : BaseClass
+	{
+		[SerializeField] private int integer;
+		[SerializeReference, TypeDropdown] private BaseClass other;
+	}
+
 	public class TestOtherClass
 	{
 		public class TestNestedClass : BaseClass

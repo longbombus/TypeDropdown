@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -77,7 +78,36 @@ namespace TypeDropdown.Editor
 				currentIndex = 0;
 
 			var root = new VisualElement();
-			var dropdown = new PopupField<string>(property.displayName, typeLabels, currentIndex);
+			PopupField<string> dropdown;
+
+			switch (behaviour)
+			{
+				case Behaviour.Reference:
+					var propertyField = new PropertyField(property);
+					root.Add(propertyField);
+
+					dropdown = new PopupField<string>(null, typeLabels, currentIndex)
+					{
+						style =
+						{
+							position = Position.Absolute,
+							left = Length.Percent(38.2f),
+							right = 0,
+							top = 0
+						}
+					};
+					root.Add(dropdown);
+					break;
+
+				case Behaviour.String:
+					dropdown = new PopupField<string>(property.displayName, typeLabels, currentIndex);
+					root.Add(dropdown);
+					break;
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(behaviour), behaviour, null);
+			}
+
 			dropdown.RegisterValueChangedCallback(evt =>
 			{
 				int idx = typeLabels.IndexOf(evt.newValue);
@@ -118,7 +148,6 @@ namespace TypeDropdown.Editor
 				property.serializedObject.ApplyModifiedProperties();
 			});
 
-			root.Add(dropdown);
 			return root;
 		}
 
