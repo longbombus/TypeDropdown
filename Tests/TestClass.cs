@@ -15,6 +15,10 @@ namespace TypeDropdown.Tests
     {
     }
 
+    public abstract class TestAbstractClass : TestBaseClass
+    {
+    }
+
     [System.Serializable]
     public class TestSerializableClass : TestBaseClass
     {

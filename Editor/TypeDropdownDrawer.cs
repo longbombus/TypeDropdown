@@ -45,7 +45,7 @@ namespace TypeDropdown.Editor
 				if (behaviour == Behaviour.Reference && TypeUtility.TryGetTypeUnityStyle(property.managedReferenceFieldTypename, out var baseType))
 					filterTypes = filterTypes.Append(baseType);
 
-				typesFilter = new TypesFilter(filterTypes, typeDropdownAttribute.NamePattern);
+				typesFilter = new TypesFilter(filterTypes, typeDropdownAttribute.NamePattern, behaviour == Behaviour.String);
 			}
 			catch (Exception e)
 			{
