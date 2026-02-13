@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.CodeEditor;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace TypeDropdown.Editor
 	public class TypeDropdownDrawer : PropertyDrawer
 	{
 		private static readonly TypesProvider TypesProvider = new();
+
+		private Button pickButton;
 
 		public override VisualElement CreatePropertyGUI(SerializedProperty property)
 		{
@@ -80,28 +83,46 @@ namespace TypeDropdown.Editor
 			var root = new VisualElement();
 			PopupField<string> dropdown;
 
+			VisualElement dropdownRow;
+
 			switch (behaviour)
 			{
 				case Behaviour.Reference:
 					var propertyField = new PropertyField(property);
 					root.Add(propertyField);
 
-					dropdown = new PopupField<string>(null, typeLabels, currentIndex)
+					dropdownRow = new VisualElement
 					{
 						style =
 						{
 							position = Position.Absolute,
 							left = Length.Percent(38.2f),
 							right = 0,
-							top = 0
+							top = 0,
+						},
+					};
+					root.Add(dropdownRow);
+
+					dropdown = new PopupField<string>(null, typeLabels, currentIndex)
+					{
+						style =
+						{
+							flexGrow = 1
 						}
 					};
-					root.Add(dropdown);
+					dropdownRow.Add(dropdown);
 					break;
 
 				case Behaviour.String:
-					dropdown = new PopupField<string>(property.displayName, typeLabels, currentIndex);
-					root.Add(dropdown);
+					dropdownRow = root;
+					dropdown = new PopupField<string>(property.displayName, typeLabels, currentIndex)
+					{
+						style =
+						{
+							flexGrow = 1
+						}
+					};
+					dropdownRow.Add(dropdown);
 					break;
 
 				default:
@@ -133,23 +154,72 @@ namespace TypeDropdown.Editor
 								JsonUtility.FromJsonOverwrite(oldValueJson, selectedTypeInstance);
 
 							property.managedReferenceValue = selectedTypeInstance;
+							pickButton.SetEnabled(true);
 						}
 						else
 						{
 							property.managedReferenceValue = null;
+							pickButton.SetEnabled(false);
 						}
 
 						break;
 
 					case Behaviour.String:
 						property.stringValue = selectedTypeName;
+						pickButton.SetEnabled(!string.IsNullOrWhiteSpace(selectedTypeName));
 						break;
 				}
 				property.serializedObject.ApplyModifiedProperties();
 			});
 
+			dropdownRow.style.flexDirection = FlexDirection.Row;
+			pickButton = new Button(() =>
+			{
+				Type type;
+				switch (behaviour)
+				{
+					case Behaviour.Reference: TypesProvider.TryGetTypeUnityStyle(property.managedReferenceFullTypename, out type); break;
+					case Behaviour.String: TypesProvider.TryGetType(property.stringValue, out type); break;
+					default: type = null; break;
+				}
+
+				if (type == null)
+					return;
+
+				if (!TryPickTypeScript(type))
+					Debug.LogError($"Couldn't find script according type {type}");
+			});
+			pickButton.AddToClassList("unity-object-field__selector");
+			pickButton.SetEnabled(GetType(behaviour, property) != null);
+			dropdownRow.Add(pickButton);
+
 			return root;
 		}
+
+		public static bool TryPickTypeScript(Type type)
+		{
+			if (type == null)
+				return false;
+
+			var scriptGUIDs = AssetDatabase.FindAssetGUIDs($"t:script {type.Name}");
+			if (scriptGUIDs.Length > 0)
+			{
+				CodeEditor.CurrentEditor.OpenProject(AssetDatabase.GUIDToAssetPath(scriptGUIDs[0]));
+				return true;
+			}
+
+			// TODO: try find in scripts text
+
+			return false;
+		}
+
+		private static Type GetType(Behaviour behaviour, SerializedProperty property)
+			=> behaviour switch
+			{
+				Behaviour.Reference => property.managedReferenceValue?.GetType(),
+				Behaviour.String => TypesProvider.TryGetType(property.stringValue, out var type) ? type : null,
+				_ => null
+			};
 
 		private static string GetTypeLabel(Type t)
 			=> string.IsNullOrEmpty(t.Namespace) ? t.Name : $"{t.Namespace}/{t.Name}";
