@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.CodeEditor;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -12,7 +11,7 @@ namespace TypeDropdown.Editor
 	[CustomPropertyDrawer(typeof(TypeDropdownAttribute))]
 	public class TypeDropdownDrawer : PropertyDrawer
 	{
-		private static readonly TypesProvider TypesProvider = new();
+		private static readonly TypesCache TypesCache = new();
 
 		private Button pickButton;
 
@@ -43,7 +42,7 @@ namespace TypeDropdown.Editor
 			{
 				var filterTypes = typeDropdownAttribute.BaseTypes ?? Enumerable.Empty<Type>();
 
-				if (behaviour == Behaviour.Reference && TypesProvider.TryGetTypeUnityStyle(property.managedReferenceFieldTypename, out var baseType))
+				if (behaviour == Behaviour.Reference && TypeUtility.TryGetTypeUnityStyle(property.managedReferenceFieldTypename, out var baseType))
 					filterTypes = filterTypes.Append(baseType);
 
 				typesFilter = new TypesFilter(filterTypes, typeDropdownAttribute.NamePattern);
@@ -56,7 +55,7 @@ namespace TypeDropdown.Editor
 				);
 			}
 
-			var types = TypesProvider.GetTypes(typesFilter);
+			var types = TypesCache.GetTypes(typesFilter);
 			var typeLabels = new List<string>(types.Count + 1);
 			var typeNames = new List<string>(types.Count + 1);
 
@@ -66,7 +65,7 @@ namespace TypeDropdown.Editor
 			foreach (var t in types)
 			{
 				typeLabels.Add(GetTypeLabel(t));
-				typeNames.Add(TypesProvider.GetTypeName(t));
+				typeNames.Add(TypeUtility.GetTypeName(t));
 			}
 
 			var currentValue = behaviour switch
@@ -141,13 +140,13 @@ namespace TypeDropdown.Editor
 						string oldValueJson = null;
 						if (property.managedReferenceValue != null)
 						{
-							if (TypesProvider.GetTypeName(property.managedReferenceValue.GetType()) == selectedTypeName)
+							if (TypeUtility.GetTypeName(property.managedReferenceValue.GetType()) == selectedTypeName)
 								return;
 
 							oldValueJson = JsonUtility.ToJson(property.managedReferenceValue, false);
 						}
 
-						if (TypesProvider.TryGetType(selectedTypeName, out var selectedType))
+						if (TypeUtility.TryGetType(selectedTypeName, out var selectedType))
 						{
 							var selectedTypeInstance = Activator.CreateInstance(selectedType);
 							if (oldValueJson != null)
@@ -178,8 +177,8 @@ namespace TypeDropdown.Editor
 				Type type;
 				switch (behaviour)
 				{
-					case Behaviour.Reference: TypesProvider.TryGetTypeUnityStyle(property.managedReferenceFullTypename, out type); break;
-					case Behaviour.String: TypesProvider.TryGetType(property.stringValue, out type); break;
+					case Behaviour.Reference: TypeUtility.TryGetTypeUnityStyle(property.managedReferenceFullTypename, out type); break;
+					case Behaviour.String: TypeUtility.TryGetType(property.stringValue, out type); break;
 					default: type = null; break;
 				}
 
@@ -200,7 +199,7 @@ namespace TypeDropdown.Editor
 			=> behaviour switch
 			{
 				Behaviour.Reference => property.managedReferenceValue?.GetType(),
-				Behaviour.String => TypesProvider.TryGetType(property.stringValue, out var type) ? type : null,
+				Behaviour.String => TypeUtility.TryGetType(property.stringValue, out var type) ? type : null,
 				_ => null
 			};
 
