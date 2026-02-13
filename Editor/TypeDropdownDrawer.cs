@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace TypeDropdown.Editor
@@ -36,13 +37,10 @@ namespace TypeDropdown.Editor
 			TypesFilter typesFilter;
 			try
 			{
-				var filterTypes = Enumerable.Empty<Type>();
+				var filterTypes = typeDropdownAttribute.BaseTypes ?? Enumerable.Empty<Type>();
 
-				if (behaviour == Behaviour.Reference)
-					filterTypes = filterTypes.Append(TypesProvider.GetType(property.managedReferenceFullTypename));
-
-				if (typeDropdownAttribute.BaseTypes != null)
-					filterTypes = filterTypes.Concat(typeDropdownAttribute.BaseTypes);
+				if (behaviour == Behaviour.Reference && TypesProvider.TryGetTypeUnityStyle(property.managedReferenceFieldTypename, out var baseType))
+					filterTypes = filterTypes.Append(baseType);
 
 				typesFilter = new TypesFilter(filterTypes, typeDropdownAttribute.NamePattern);
 			}
@@ -54,7 +52,7 @@ namespace TypeDropdown.Editor
 				);
 			}
 
-			var types = TypesProvider.GetTypes(typesFilter).ToList();
+			var types = TypesProvider.GetTypes(typesFilter);
 			var typeLabels = new List<string>(types.Count + 1);
 			var typeNames = new List<string>(types.Count + 1);
 
@@ -64,43 +62,64 @@ namespace TypeDropdown.Editor
 			foreach (var t in types)
 			{
 				typeLabels.Add(GetTypeLabel(t));
-				typeNames.Add(t.FullName);
+				typeNames.Add(TypesProvider.GetTypeName(t));
 			}
 
-			var currentValue = property.stringValue ?? string.Empty;
-			int currentIndex = FindBestIndex(typeNames, types, currentValue);
+			var currentValue = behaviour switch
+			{
+				Behaviour.Reference => property.managedReferenceValue?.GetType().AssemblyQualifiedName,
+				Behaviour.String => property.stringValue,
+				_ => throw new ArgumentOutOfRangeException(nameof(behaviour), behaviour, null)
+			};
+
+			int currentIndex = typeNames.IndexOf(currentValue);
+			if (currentIndex < 0)
+				currentIndex = 0;
 
 			var root = new VisualElement();
-			var dropdown = new PopupField<string>(ObjectNames.NicifyVariableName(property.name), typeLabels, currentIndex);
+			var dropdown = new PopupField<string>(property.displayName, typeLabels, currentIndex);
 			dropdown.RegisterValueChangedCallback(evt =>
 			{
 				int idx = typeLabels.IndexOf(evt.newValue);
 				if (idx < 0)
 					idx = 0;
-				string selected = typeNames[idx];
-				property.stringValue = selected;
+				string selectedTypeName = typeNames[idx];
+				switch (behaviour)
+				{
+					case Behaviour.Reference:
+						string oldValueJson = null;
+						if (property.managedReferenceValue != null)
+						{
+							if (TypesProvider.GetTypeName(property.managedReferenceValue.GetType()) == selectedTypeName)
+								return;
+
+							oldValueJson = JsonUtility.ToJson(property.managedReferenceValue, false);
+						}
+
+						if (TypesProvider.TryGetType(selectedTypeName, out var selectedType))
+						{
+							var selectedTypeInstance = Activator.CreateInstance(selectedType);
+							if (oldValueJson != null)
+								JsonUtility.FromJsonOverwrite(oldValueJson, selectedTypeInstance);
+
+							property.managedReferenceValue = selectedTypeInstance;
+						}
+						else
+						{
+							property.managedReferenceValue = null;
+						}
+
+						break;
+
+					case Behaviour.String:
+						property.stringValue = selectedTypeName;
+						break;
+				}
 				property.serializedObject.ApplyModifiedProperties();
 			});
 
 			root.Add(dropdown);
 			return root;
-		}
-
-		private static int FindBestIndex(List<string> valueChoices, List<Type> types, string currentValue)
-		{
-			if (string.IsNullOrEmpty(currentValue))
-				return 0;
-
-			int idx = valueChoices.IndexOf(currentValue);
-			if (idx >= 0) return idx;
-
-			for (int i = 1; i < valueChoices.Count; i++)
-			{
-				var t = types[i - 1];
-				if (string.Equals(t.Name, currentValue, StringComparison.Ordinal))
-					return i;
-			}
-			return 0;
 		}
 
 		private static string GetTypeLabel(Type t)
