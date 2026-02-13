@@ -1,9 +1,8 @@
 {
   "name": "com.longbombus.typedropdown",
   "displayName": "Type Dropdown",
-  "version": "0.0.1",
-  "unity": "2022.3",
-  "description": "Use [TypeDropdown] attribute to select in Inspector a type for [SerializeReference] fields or [SerializeField] string fields",
+  "version": "0.1.0",
+  "description": "Use [TypeDropdown] attribute to select in Inspector a type for [SerializeReference] object fields or [SerializeField] string fields",
   "keywords": [
     "SerializeReference",
     "dropdown",
@@ -12,5 +11,8 @@
   ],
   "license": "MIT",
   "category": "Utilities",
-  "dependencies": {}
+  "author": {
+    "name": "Denis Lazarev",
+    "email": "mahrizh@gmail.com"
+  }
 }
