@@ -70,7 +70,7 @@ namespace TypeDropdown.Editor
 
 			var currentValue = behaviour switch
 			{
-				Behaviour.Reference => property.managedReferenceValue?.GetType().AssemblyQualifiedName,
+				Behaviour.Reference => TypeUtility.GetTypeName(property.managedReferenceValue?.GetType()),
 				Behaviour.String => property.stringValue,
 				_ => throw new ArgumentOutOfRangeException(nameof(behaviour), behaviour, null)
 			};
@@ -160,7 +160,6 @@ namespace TypeDropdown.Editor
 							property.managedReferenceValue = null;
 							pickButton.SetEnabled(false);
 						}
-
 						break;
 
 					case Behaviour.String:

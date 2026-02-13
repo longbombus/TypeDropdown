@@ -70,7 +70,7 @@ namespace TypeDropdown.Editor
 
 		/// <returns> Assembly qualified name </returns>
 		public static string GetTypeName(Type type)
-			=> $"{type.FullName}, {type.Assembly.GetName().Name}";
+			=> type != null ? $"{type.FullName}, {type.Assembly.GetName().Name}" : string.Empty;
 
 		/// <summary>
 		/// Opens the script file that defines the specified type in the code editor.
