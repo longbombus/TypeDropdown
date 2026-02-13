@@ -186,7 +186,7 @@ namespace TypeDropdown.Editor
 				if (type == null)
 					return;
 
-				if (!TryPickTypeScript(type))
+				if (!TypeUtility.TryPickTypeScript(type))
 					Debug.LogError($"Couldn't find script according type {type}");
 			});
 			pickButton.AddToClassList("unity-object-field__selector");
@@ -194,23 +194,6 @@ namespace TypeDropdown.Editor
 			dropdownRow.Add(pickButton);
 
 			return root;
-		}
-
-		public static bool TryPickTypeScript(Type type)
-		{
-			if (type == null)
-				return false;
-
-			var scriptGUIDs = AssetDatabase.FindAssetGUIDs($"t:script {type.Name}");
-			if (scriptGUIDs.Length > 0)
-			{
-				CodeEditor.CurrentEditor.OpenProject(AssetDatabase.GUIDToAssetPath(scriptGUIDs[0]));
-				return true;
-			}
-
-			// TODO: try find in scripts text
-
-			return false;
 		}
 
 		private static Type GetType(Behaviour behaviour, SerializedProperty property)
