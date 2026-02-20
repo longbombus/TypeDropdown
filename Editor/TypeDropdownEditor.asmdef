@@ -2,7 +2,7 @@
     "name": "TypeDropdown.Editor",
     "rootNamespace": "TypeDropdown.Editor",
     "references": [
-        "GUID:cd2d3706cc4394c8c9c9ccd8041d21dc"
+        "TypeDropdown"
     ],
     "includePlatforms": [
         "Editor"
