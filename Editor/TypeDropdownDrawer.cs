@@ -191,6 +191,9 @@ namespace TypeDropdown.Editor
 			pickButton.SetEnabled(GetType(behaviour, property) != null);
 			dropdownRow.Add(pickButton);
 
+			var searchDropdown = new SearchDropdown<Type>(types, GetTypeLabel, t => t.FullName);
+			root.Add(searchDropdown);
+
 			return root;
 		}
 
