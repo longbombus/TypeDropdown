@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine.Assemblies;
 
 namespace TypeDropdown.Editor
 {
@@ -15,7 +16,7 @@ namespace TypeDropdown.Editor
 				return filterTypes;
 
 			filterTypes = new List<Type>();
-			foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+			foreach (var assembly in CurrentAssemblies.GetLoadedAssemblies())
 			{
 				IEnumerable<Type> types;
 				try { types = assembly.GetTypes(); }
